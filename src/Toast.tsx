@@ -27,7 +27,7 @@ const H_PADDING = 25;
 const TOAST_WIDTH = Dimensions.get('screen').width - H_PADDING;
 const INITIAL_POSITION = -TOAST_HEIGHT; // hide toast above screen
 const TOP_OF_SCREEN = 0;
-const FINAL_POSITION = 65; // i.e. 65 pixels from top edge of screen
+export const FINAL_POSITION = 65; // i.e. 65 pixels from top edge of screen
 const INITIAL_OPACITY = 0;
 const FINAL_OPACITY = 1;
 const SHOW_ANIM_CONFIG = { damping: 13, stiffness: 110 };
@@ -51,6 +51,7 @@ type Props = {
   onPress?: () => void;
   onLongPress?: () => void;
 };
+// to allow it to appear over modals try using fullscreenwindow component from react-native-screens
 
 export function Toast(props: Props) {
   const top = useSharedValue(INITIAL_POSITION);
@@ -118,6 +119,7 @@ export function Toast(props: Props) {
     <GestureDetector gesture={flingGesture}>
       <Reanimated.View
         style={[styles.container, props.containerStyle, animatedStyles]}
+        testID={'toast'}
       >
         <View style={styles.innerContainer}>
           <View style={styles.accentColumn} />
