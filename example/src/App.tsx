@@ -1,32 +1,25 @@
 import * as React from 'react';
 
-import { StyleSheet, View, Button, Text } from 'react-native';
-import { Toast } from 'react-native-toaster';
+import { StyleSheet, View, Button } from 'react-native';
+import { useToaster } from 'react-native-toaster';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
-export default function App() {
-  const [show, setShow] = React.useState(false);
-  const [t, setT] = React.useState('hello :)');
-
+import { ToastProvider } from 'react-native-toaster';
+export default () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <Toast
-          containerStyle={{}}
-          isVisible={show}
-          setIsVisible={(s) => setShow(s)}
-          delay={5000}
-          onWillShow={() => setT('will show')}
-          onDidShow={() => setT('did show')}
-          onWillHide={() => setT('will hide')}
-          onDidHide={() => setT('did hide')}
-          title="llooool"
-          autoDismiss={false}
-        />
-        <Button title="lol" onPress={() => setShow(true)} />
-        <Text>{t}</Text>
-      </View>
+      <ToastProvider>
+        <W />
+      </ToastProvider>
     </GestureHandlerRootView>
+  );
+};
+
+export function W() {
+  const t = useToaster();
+  return (
+    <View style={styles.container}>
+      <Button title="lol" onPress={() => t.show({ title: 'lol' })} />
+    </View>
   );
 }
 
@@ -35,7 +28,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'salmon',
+    backgroundColor: '#eee',
   },
   box: {
     width: 60,

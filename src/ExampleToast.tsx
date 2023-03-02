@@ -1,22 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Button, StyleSheet } from 'react-native';
-import { Toast } from './Toast';
+import { ToastProvider, useToaster } from './ToastContext';
+
+export const Wrapper = () => {
+  return (
+    <ToastProvider>
+      <ExampleToast />
+    </ToastProvider>
+  );
+};
 
 export function ExampleToast() {
-  const [showToast, setShowToast] = useState(false);
-
+  const t = useToaster();
   return (
     <>
-      <Toast
-        isVisible={showToast}
-        setIsVisible={setShowToast}
-        delay={3000}
-        title="hello there"
-      />
       <View style={styles.container}>
         <Button
           title="show toast"
-          onPress={() => setShowToast(true)}
+          onPress={() => {
+            t.show({
+              title: 'lol',
+              onDidShow: () => console.warn('did show!!!!'),
+              onWillShow: () => console.warn('2222'),
+            });
+          }}
           testID="lol"
         />
       </View>

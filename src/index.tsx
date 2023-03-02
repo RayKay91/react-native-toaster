@@ -1,3 +1,4 @@
 import { Toast } from './Toast';
+import { ToastProvider, useToaster } from './ToastContext';
 
-export { Toast };
+export { Toast, ToastProvider, useToaster };

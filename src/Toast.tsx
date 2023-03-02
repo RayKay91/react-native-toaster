@@ -21,6 +21,8 @@ import {
   Gesture,
   Directions,
 } from 'react-native-gesture-handler';
+import type { ToastType } from './types';
+import * as consts from './constants';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -33,17 +35,18 @@ const FINAL_OPACITY = 1;
 const SHOW_ANIM_CONFIG = { damping: 13, stiffness: 110 };
 const HIDE_ANIM_CONFIG = { easing: Easing.back(1.3), duration: 500 };
 
-type Props = {
+export type Props = {
   isVisible: boolean;
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  delay: number;
   title: string;
+  delay?: number;
   subText?: string;
   autoDismiss?: boolean;
   containerStyle?: ViewStyle;
   titleStyle?: TextStyle;
   subTextStyle?: TextStyle;
   topOffset?: number;
+  toastType?: ToastType;
   onWillShow?: () => void;
   onDidShow?: () => void;
   onWillHide?: () => void;
@@ -53,7 +56,10 @@ type Props = {
 };
 // to allow it to appear over modals try using fullscreenwindow component from react-native-screens
 
-export function Toast(props: Props) {
+// @todo implemenet toast type
+
+export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
+  console.log({ props });
   const top = useSharedValue(INITIAL_POSITION);
   const onShow = useCallback(() => {
     props.onDidShow?.();
@@ -87,7 +93,7 @@ export function Toast(props: Props) {
     if (props.isVisible) {
       show();
       if (props.autoDismiss !== false) {
-        setTimeout(() => props.setIsVisible(false), props.delay);
+        setTimeout(() => props.setIsVisible(false), delay);
       }
     }
 
