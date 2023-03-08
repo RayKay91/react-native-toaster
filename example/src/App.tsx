@@ -19,6 +19,8 @@ export function W() {
   return (
     <View style={styles.container}>
       <Button title="lol" onPress={() => t.show({ title: 'lol' })} />
+      <Button title="lol" onPress={() => t.show({ title: 'hahaha' })} />
+      <Button title="lol" onPress={() => t.show({ title: 'loooooool' })} />
     </View>
   );
 }

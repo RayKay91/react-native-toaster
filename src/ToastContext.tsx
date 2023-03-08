@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
 import { Toast, Props as ToastProps } from './Toast';
 
-type ToastConfig = {
+export type ToastConfig = {
   id?: string;
-} & Omit<ToastProps, 'isVisible' | 'setIsVisible'>;
+} & Omit<
+  ToastProps,
+  'isVisible' | 'setIsVisible' | 'toastQueue' | 'setToastConfig'
+>;
 
 type ToastContextType = {
   isToastVisible: boolean;
@@ -49,10 +52,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     title: '',
   });
 
-  const getNextToast = () => queue.current[queue.current.length - 1];
   const show = (toastConfigs: ToastConfig) => {
-    queue.current.unshift(toastConfigs);
-    const nextToast = getNextToast();
+    queue.current.push(toastConfigs);
+    const nextToast = queue.current[0];
     if (nextToast) setToastConfig(nextToast);
     setShowToast(true);
   };
@@ -74,6 +76,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {...toastConfig}
         isVisible={showToast}
         setIsVisible={setShowToast}
+        setToastConfig={setToastConfig}
+        toastQueue={queue.current}
       />
     </ToastContext.Provider>
   );

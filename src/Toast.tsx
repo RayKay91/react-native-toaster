@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   Dimensions,
   StyleSheet,
@@ -20,9 +20,13 @@ import {
   GestureDetector,
   Gesture,
   Directions,
+  GestureStateChangeEvent,
+  PanGestureHandlerEventPayload,
+  GestureUpdateEvent,
 } from 'react-native-gesture-handler';
 import type { ToastType } from './types';
 import * as consts from './constants';
+import type { ToastConfig } from './ToastContext';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -38,6 +42,8 @@ const HIDE_ANIM_CONFIG = { easing: Easing.back(1.3), duration: 500 };
 export type Props = {
   isVisible: boolean;
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  setToastConfig: React.Dispatch<React.SetStateAction<ToastConfig>>;
+  toastQueue: ToastConfig[];
   title: string;
   delay?: number;
   subText?: string;
@@ -58,10 +64,15 @@ export type Props = {
 
 // @todo implemenet toast type
 
+const debug = false;
+
 export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
-  console.log({ props });
+  debug && console.log({ props });
+  // keep track of is on screen as visibility triggers an animation which may
+  // yield a false for is visible, but it is still on screen during that animaiton
+  const timer = useRef<NodeJS.Timer | null>(null);
   const top = useSharedValue(INITIAL_POSITION);
-  const onShow = useCallback(() => {
+  const onShowFinish = useCallback(() => {
     props.onDidShow?.();
   }, [props]);
 
@@ -71,47 +82,83 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
       props.topOffset ?? FINAL_POSITION,
       SHOW_ANIM_CONFIG,
       () => {
-        runOnJS(onShow)();
+        runOnJS(onShowFinish)();
       }
     );
-  }, [props, top, onShow]);
+  }, [props, top, onShowFinish]);
 
-  const onHide = useCallback(() => {
-    props.setIsVisible(false);
+  const onHideFinish = useCallback(() => {
     props.onDidHide?.();
+    props.toastQueue.shift();
+    const nextToast = props.toastQueue[0];
+    if (nextToast) {
+      props.setToastConfig(nextToast);
+      props.setIsVisible(true);
+    }
   }, [props]);
 
   const hide = useCallback(() => {
     props.onWillHide?.();
+    props.setIsVisible(false);
     top.value = withTiming(INITIAL_POSITION, HIDE_ANIM_CONFIG, () => {
-      runOnJS(onHide)(); // needs to be a named cb
+      runOnJS(onHideFinish)(); // needs to be a named cb
     });
-  }, [props, top, onHide]);
+  }, [props, top, onHideFinish]);
 
   // useEffect necessary otherwise causes too many pending callbacks issue.
   useEffect(() => {
     if (props.isVisible) {
       show();
       if (props.autoDismiss !== false) {
-        setTimeout(() => props.setIsVisible(false), delay);
+        timer.current = setTimeout(() => props.setIsVisible(false), delay);
       }
     }
 
-    if (!props.isVisible && top.value !== INITIAL_POSITION) {
-      hide();
+    if (!props.isVisible) {
+      if (timer.current) {
+        clearTimeout(timer.current);
+      }
+      if (top.value !== INITIAL_POSITION) {
+        hide();
+      }
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.isVisible]);
 
+  const onPan = useCallback(
+    (e: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+      }
+      const newPosition = FINAL_POSITION + e.translationY ** 0.7;
+      const isMovingDown = e.translationY > 0;
+      if (isMovingDown) {
+        top.value = newPosition; // add resistance when moving down
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hide]
+  );
+
+  const onEnd = useCallback(
+    (e: GestureStateChangeEvent<PanGestureHandlerEventPayload>) => {
+      if (e.translationY > -20) {
+        top.value = withSpring(FINAL_POSITION, SHOW_ANIM_CONFIG);
+      }
+    },
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const pan = Gesture.Pan().onUpdate(onPan).onEnd(onEnd);
   const onFlingStart = useCallback(() => {
     // move into useGesture custom hook
     hide();
   }, [hide]);
-  const flingGesture = Gesture.Fling()
-    .onStart(onFlingStart)
-    .direction(Directions.UP);
-
+  const fling = Gesture.Fling().onStart(onFlingStart).direction(Directions.UP);
+  const gestures = Gesture.Simultaneous(pan, fling);
   const animatedStyles = useAnimatedStyle(() => ({
     top: top.value,
     opacity: interpolate(
@@ -122,7 +169,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   }));
 
   return (
-    <GestureDetector gesture={flingGesture}>
+    <GestureDetector gesture={gestures}>
       <Reanimated.View
         style={[styles.container, props.containerStyle, animatedStyles]}
         testID={'toast'}
@@ -154,6 +201,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: TOAST_WIDTH,
     height: TOAST_HEIGHT,
+    alignSelf: 'center',
   },
   innerContainer: {
     flexDirection: 'row',
