@@ -157,5 +157,7 @@
       ]
     ]
   },
-  "dependencies": {}
+  "dependencies": {
+    "react-native-screens": "^3.20.0"
+  }
 }

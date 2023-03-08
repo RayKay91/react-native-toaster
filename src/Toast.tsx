@@ -27,6 +27,7 @@ import {
 import type { ToastType } from './types';
 import * as consts from './constants';
 import type { ToastConfig } from './ToastContext';
+// import { FullWindowOverlay } from 'react-native-screens';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -65,6 +66,9 @@ export type Props = {
 // @todo implemenet toast type
 
 const debug = false;
+
+// @todo known issues - when flinginh up the toast config changes before the animation occurs
+// this leads to changing content when swiping up rapidly.
 
 export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   debug && console.log({ props });
