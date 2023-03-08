@@ -67,9 +67,6 @@ export type Props = {
 
 const debug = false;
 
-// @todo known issues - when flinginh up the toast config changes before the animation occurs
-// this leads to changing content when swiping up rapidly.
-
 export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   debug && console.log({ props });
   // keep track of is on screen as visibility triggers an animation which may
@@ -104,8 +101,9 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   const hide = useCallback(() => {
     props.onWillHide?.();
     props.setIsVisible(false);
-    top.value = withTiming(INITIAL_POSITION, HIDE_ANIM_CONFIG, () => {
-      runOnJS(onHideFinish)(); // needs to be a named cb
+    // callback is running sooner than expected with fling gesture hence the check for finished.
+    top.value = withTiming(INITIAL_POSITION, HIDE_ANIM_CONFIG, (finished) => {
+      if (finished) runOnJS(onHideFinish)(); // needs to be a named cb
     });
   }, [props, top, onHideFinish]);
 
@@ -142,7 +140,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hide]
+    []
   );
 
   const onEnd = useCallback(
