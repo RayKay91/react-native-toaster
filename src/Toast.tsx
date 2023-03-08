@@ -27,7 +27,7 @@ import {
 import type { ToastType } from './types';
 import * as consts from './constants';
 import type { ToastConfig } from './ToastContext';
-// import { FullWindowOverlay } from 'react-native-screens';
+import { FullWindowOverlay } from 'react-native-screens';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -61,7 +61,6 @@ export type Props = {
   onPress?: () => void;
   onLongPress?: () => void;
 };
-// to allow it to appear over modals try using fullscreenwindow component from react-native-screens
 
 // @todo implemenet toast type
 
@@ -171,6 +170,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   }));
 
   return (
+    // <FullWindowOverlay>
     <GestureDetector gesture={gestures}>
       <Reanimated.View
         style={[styles.container, props.containerStyle, animatedStyles]}
@@ -193,6 +193,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
         </View>
       </Reanimated.View>
     </GestureDetector>
+    // </FullWindowOverlay>
   );
 }
 
@@ -209,6 +210,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: '100%',
     borderRadius: BORDER_RADIUS,
+    borderWidth: 1,
+    borderColor: '#BBB',
   },
   accentColumn: {
     width: 10,

@@ -71,7 +71,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         hide,
       })}
     >
-      {children}
       <Toast
         {...toastConfig}
         isVisible={showToast}
@@ -79,6 +78,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         setToastConfig={setToastConfig}
         toastQueue={queue.current}
       />
+      {children}
     </ToastContext.Provider>
   );
 }
