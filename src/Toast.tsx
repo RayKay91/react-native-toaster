@@ -6,6 +6,7 @@ import {
   View,
   Text,
   TextStyle,
+  TouchableOpacity,
 } from 'react-native';
 import Reanimated, {
   useAnimatedStyle,
@@ -27,7 +28,6 @@ import {
 import type { ToastType } from './types';
 import * as consts from './constants';
 import type { ToastConfig } from './ToastContext';
-import { FullWindowOverlay } from 'react-native-screens';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -39,6 +39,7 @@ const INITIAL_OPACITY = 0;
 const FINAL_OPACITY = 1;
 const SHOW_ANIM_CONFIG = { damping: 13, stiffness: 110 };
 const HIDE_ANIM_CONFIG = { easing: Easing.back(1.3), duration: 500 };
+const DRAG_RESISTANCE = 0.7;
 
 export type Props = {
   isVisible: boolean;
@@ -68,8 +69,6 @@ const debug = false;
 
 export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   debug && console.log({ props });
-  // keep track of is on screen as visibility triggers an animation which may
-  // yield a false for is visible, but it is still on screen during that animaiton
   const timer = useRef<NodeJS.Timer | null>(null);
   const top = useSharedValue(INITIAL_POSITION);
   const onShowFinish = useCallback(() => {
@@ -116,12 +115,8 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
     }
 
     if (!props.isVisible) {
-      if (timer.current) {
-        clearTimeout(timer.current);
-      }
-      if (top.value !== INITIAL_POSITION) {
-        hide();
-      }
+      if (timer.current) clearTimeout(timer.current);
+      if (top.value !== INITIAL_POSITION) hide();
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,11 +125,14 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   const onPan = useCallback(
     (e: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
       if (timer.current) {
+        // refresh timeout if notification interacted with
+        // ensures notification is not hidden while user is interacting with it.
         clearTimeout(timer.current);
+        timer.current = setTimeout(() => props.setIsVisible(false), delay);
       }
-      const newPosition = FINAL_POSITION + e.translationY ** 0.7;
       const isMovingDown = e.translationY > 0;
       if (isMovingDown) {
+        const newPosition = FINAL_POSITION + e.translationY ** DRAG_RESISTANCE;
         top.value = newPosition; // add resistance when moving down
       }
     },
@@ -144,7 +142,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
 
   const onEnd = useCallback(
     (e: GestureStateChangeEvent<PanGestureHandlerEventPayload>) => {
-      if (e.translationY > -20) {
+      if (e.translationY > 0) {
         top.value = withSpring(FINAL_POSITION, SHOW_ANIM_CONFIG);
       }
     },
@@ -154,12 +152,9 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   );
 
   const pan = Gesture.Pan().onUpdate(onPan).onEnd(onEnd);
-  const onFlingStart = useCallback(() => {
-    // move into useGesture custom hook
-    hide();
-  }, [hide]);
+  const onFlingStart = useCallback(hide, [hide]);
   const fling = Gesture.Fling().onStart(onFlingStart).direction(Directions.UP);
-  const gestures = Gesture.Simultaneous(pan, fling);
+  const gestures = Gesture.Exclusive(fling, pan);
   const animatedStyles = useAnimatedStyle(() => ({
     top: top.value,
     opacity: interpolate(
@@ -170,13 +165,17 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   }));
 
   return (
-    // <FullWindowOverlay>
     <GestureDetector gesture={gestures}>
       <Reanimated.View
         style={[styles.container, props.containerStyle, animatedStyles]}
         testID={'toast'}
       >
-        <View style={styles.innerContainer}>
+        <TouchableOpacity
+          onLongPress={props.onLongPress}
+          onPress={props.onPress}
+          disabled={!props.onPress && !props.onLongPress}
+          style={styles.innerContainer}
+        >
           <View style={styles.accentColumn} />
           <View style={styles.contentWrapper}>
             <View style={styles.contentContainer}>
@@ -190,10 +189,9 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
               )}
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Reanimated.View>
     </GestureDetector>
-    // </FullWindowOverlay>
   );
 }
 
