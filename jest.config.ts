@@ -9,7 +9,6 @@ const config: Config = {
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|react-native-reanimated)/)',
   ],
-  setupFilesAfterEnv: ['./jest-setup.js'],
   verbose: true,
 };
 

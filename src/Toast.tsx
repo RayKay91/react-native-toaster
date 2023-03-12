@@ -25,7 +25,7 @@ import {
   PanGestureHandlerEventPayload,
   GestureUpdateEvent,
 } from 'react-native-gesture-handler';
-import type { ToastType } from './types';
+import { ToastType } from './types';
 import * as consts from './constants';
 import type { ToastConfig } from './ToastContext';
 
@@ -62,8 +62,6 @@ export type Props = {
   onPress?: () => void;
   onLongPress?: () => void;
 };
-
-// @todo implemenet toast type
 
 const debug = false;
 
@@ -130,10 +128,11 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
         clearTimeout(timer.current);
         timer.current = setTimeout(() => props.setIsVisible(false), delay);
       }
-      const isMovingDown = e.translationY > 0;
-      if (isMovingDown) {
+      const isBelowFinalPosition = e.translationY > 0; // use 0 as event gives relative position to where view was
+      if (isBelowFinalPosition) {
+        // add resistance when moving down
         const newPosition = FINAL_POSITION + e.translationY ** DRAG_RESISTANCE;
-        top.value = newPosition; // add resistance when moving down
+        top.value = newPosition;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,7 +153,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   const pan = Gesture.Pan().onUpdate(onPan).onEnd(onEnd);
   const onFlingStart = useCallback(hide, [hide]);
   const fling = Gesture.Fling().onStart(onFlingStart).direction(Directions.UP);
-  const gestures = Gesture.Exclusive(fling, pan);
+  const gestures = Gesture.Simultaneous(fling, pan);
   const animatedStyles = useAnimatedStyle(() => ({
     top: top.value,
     opacity: interpolate(
@@ -176,7 +175,12 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
           disabled={!props.onPress && !props.onLongPress}
           style={styles.innerContainer}
         >
-          <View style={styles.accentColumn} />
+          <View
+            style={{
+              ...styles.accentColumn,
+              backgroundColor: getToastTypeColor(props.toastType),
+            }}
+          />
           <View style={styles.contentWrapper}>
             <View style={styles.contentContainer}>
               <Text style={[styles.title, props.titleStyle]}>
@@ -194,6 +198,19 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
     </GestureDetector>
   );
 }
+
+const getToastTypeColor = (toastType: ToastType | undefined) => {
+  switch (toastType) {
+    case ToastType.SUCCESS:
+      return 'green';
+    case ToastType.FAIL:
+      return 'red';
+    case ToastType.INFO:
+      return 'blue';
+    default:
+      return 'white';
+  }
+};
 
 const BORDER_RADIUS = 12;
 
@@ -213,7 +230,7 @@ const styles = StyleSheet.create({
   },
   accentColumn: {
     width: 10,
-    backgroundColor: 'red',
+    backgroundColor: 'white',
     borderTopLeftRadius: BORDER_RADIUS,
     borderBottomLeftRadius: BORDER_RADIUS,
   },
