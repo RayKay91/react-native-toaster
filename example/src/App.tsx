@@ -2,23 +2,18 @@ import * as React from 'react';
 
 import { StyleSheet, View, Button, Modal } from 'react-native';
 import { useToaster } from 'react-native-toaster';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ToastProvider } from 'react-native-toaster';
 export default () => {
   const [isV, sIsV] = React.useState(false);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ToastProvider>
-        <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
-        >
-          <Button title={'launch modal'} onPress={() => sIsV(true)} />
-          <B />
-        </View>
-        <W isV={isV} sIsV={sIsV} />
-      </ToastProvider>
-    </GestureHandlerRootView>
+    <ToastProvider>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        {/* <Button title={'launch modal'} onPress={() => sIsV(true)} /> */}
+        <B />
+      </View>
+      <W isV={isV} sIsV={sIsV} />
+    </ToastProvider>
   );
 };
 
