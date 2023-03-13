@@ -22,7 +22,17 @@ function B() {
   return (
     <Button
       title={'launch modal'}
-      onPress={() => t.show({ title: 'nmdnmdndnd' })}
+      onPress={() =>
+        t.show({
+          title: 'nmdnmdndnd',
+          subText: 'lol',
+          toastType: 2,
+          onWillShow: () => console.log('willShow'),
+          onDidShow: () => console.log('didShow'),
+          onWillHide: () => console.log('willHide'),
+          onDidHide: () => console.log('didHide'),
+        })
+      }
     />
   );
 }

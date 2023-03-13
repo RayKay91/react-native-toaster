@@ -76,17 +76,28 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
           timer.current = setTimeout(() => props.setIsVisible(false), delay);
         }
         const isBelowFinalPosition = gestureState.dy > 0; // use 0 as event gives relative position to where view was
+        const newPosition = FINAL_POSITION + gestureState.dy;
         if (isBelowFinalPosition) {
           // add resistance when moving down
-          const newPosition =
-            FINAL_POSITION + gestureState.dy ** DRAG_RESISTANCE;
+          y.current.setValue(newPosition ** DRAG_RESISTANCE);
+        } else {
+          // is going up
+          // make fling gesture)
           y.current.setValue(newPosition);
         }
       },
       onStartShouldSetPanResponder: () => true,
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 0) {
+          // going down
           Animated.spring(y.current, SHOW_ANIM_CONFIG).start();
+        } else {
+          // going up
+          console.log({ vY: gestureState.vy });
+          Animated.decay(y.current, {
+            velocity: gestureState.vy * 0.3,
+            useNativeDriver: true,
+          }).start();
         }
       },
     })
@@ -114,21 +125,28 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
     });
   }, [props]);
 
-  // useEffect necessary otherwise causes too many pending callbacks issue.
+  const isFirstMount = useRef(true);
+
+  // useEffect necessary otherwise causes bad setState issue
   useEffect(() => {
+    // create a copy because current value will have changed (react-warning)
+    const yCopy = y.current;
+    yCopy.addListener(({ value }) => {
+      // call hide function if above screen without animation.
+      if (value < TOP_OF_SCREEN && !isFirstMount) hide();
+    });
     if (props.isVisible) {
       show();
       if (props.autoDismiss !== false) {
         timer.current = setTimeout(() => props.setIsVisible(false), delay);
       }
     }
-
+    // need a way for it to not call hide when it is initially mounted.
     if (!props.isVisible) {
       if (timer.current) clearTimeout(timer.current);
-      // check this works - may need a listener instead of number conversion
-      if (Number(y.current) !== INITIAL_POSITION) hide();
+      // @todo fix this.
+      if (yCopy !== INITIAL_POSITION) hide();
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.isVisible]);
 
@@ -192,7 +210,7 @@ const getToastTypeColor = (toastType: ToastType | undefined) => {
   }
 };
 
-const BORDER_RADIUS = 12;
+const BORDER_RADIUS = 8;
 
 const styles = StyleSheet.create({
   container: {
@@ -210,7 +228,7 @@ const styles = StyleSheet.create({
     borderColor: '#BBB',
   },
   accentColumn: {
-    width: 10,
+    width: 8,
     backgroundColor: 'white',
     borderTopLeftRadius: BORDER_RADIUS,
     borderBottomLeftRadius: BORDER_RADIUS,
