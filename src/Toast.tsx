@@ -68,6 +68,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
   const y = useRef(new Animated.Value(INITIAL_POSITION));
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
         if (timer.current) {
           // refresh timeout if notification interacted with
@@ -82,23 +83,32 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
           y.current.setValue(newPosition ** DRAG_RESISTANCE);
         } else {
           // is going up
-          // make fling gesture)
           y.current.setValue(newPosition);
         }
       },
-      onStartShouldSetPanResponder: () => true,
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 0) {
           // going down
-          Animated.spring(y.current, SHOW_ANIM_CONFIG).start();
-        } else {
-          // going up
-          console.log({ vY: gestureState.vy });
-          Animated.decay(y.current, {
-            velocity: gestureState.vy * 0.3,
-            useNativeDriver: true,
-          }).start();
+          return Animated.spring(y.current, SHOW_ANIM_CONFIG).start();
         }
+
+        // going up
+        Animated.decay(y.current, {
+          velocity: gestureState.vy * 0.1,
+          useNativeDriver: true,
+        }).start();
+        let id: NodeJS.Timeout;
+        const lId = y.current.addListener(({ value }) => {
+          if (value < INITIAL_POSITION) {
+            if (id) clearTimeout(id);
+            id = setTimeout(() => {
+              if (timer.current) clearTimeout(timer.current);
+              y.current.setValue(INITIAL_POSITION);
+              hide(false);
+            }, 75);
+            y.current.removeListener(lId);
+          }
+        });
       },
     })
   ).current;
@@ -108,45 +118,48 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
     Animated.spring(y.current, SHOW_ANIM_CONFIG).start(props.onDidShow);
   }, [props]);
 
-  const hide = useCallback(() => {
-    props.onWillHide?.();
-    props.setIsVisible(false);
-    Animated.timing(y.current, HIDE_ANIM_CONFIG).start(({ finished }) => {
-      // callback running sooner than expected - on reanimated - check again after refactor.
-      if (finished) {
-        props.onDidHide?.();
-        props.toastQueue.shift();
-        const nextToast = props.toastQueue[0];
-        if (nextToast) {
-          props.setToastConfig(nextToast);
-          props.setIsVisible(true);
-        }
-      }
-    });
+  const onHide = useCallback(() => {
+    props.onDidHide?.();
+    props.toastQueue.shift();
+    const nextToast = props.toastQueue[0];
+    if (nextToast) {
+      props.setToastConfig(nextToast);
+      props.setIsVisible(true);
+    }
   }, [props]);
+
+  const hide = useCallback(
+    (runWithAnimation: boolean) => {
+      props.onWillHide?.();
+      props.setIsVisible(false);
+      // if toast is flung up, we dont want timing function to run, but other cbs and next toast logic should
+      runWithAnimation
+        ? Animated.timing(y.current, HIDE_ANIM_CONFIG).start(
+            ({ finished }) => finished && onHide()
+          )
+        : onHide();
+    },
+    [props, onHide]
+  );
 
   const isFirstMount = useRef(true);
 
   // useEffect necessary otherwise causes bad setState issue
   useEffect(() => {
-    // create a copy because current value will have changed (react-warning)
-    const yCopy = y.current;
-    yCopy.addListener(({ value }) => {
-      // call hide function if above screen without animation.
-      if (value < TOP_OF_SCREEN && !isFirstMount) hide();
-    });
     if (props.isVisible) {
       show();
       if (props.autoDismiss !== false) {
         timer.current = setTimeout(() => props.setIsVisible(false), delay);
       }
     }
-    // need a way for it to not call hide when it is initially mounted.
+
     if (!props.isVisible) {
-      if (timer.current) clearTimeout(timer.current);
-      // @todo fix this.
-      if (yCopy !== INITIAL_POSITION) hide();
+      timer.current && clearTimeout(timer.current);
+      if (!isFirstMount.current) hide(true);
     }
+    isFirstMount.current = false;
+
+    () => y.current.removeAllListeners();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.isVisible]);
 
