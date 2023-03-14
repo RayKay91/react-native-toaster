@@ -20,7 +20,6 @@ const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
 const TOAST_WIDTH = Dimensions.get('screen').width - H_PADDING;
 const INITIAL_POSITION = -TOAST_HEIGHT; // hide toast above screen
-const TOP_OF_SCREEN = 0;
 export const FINAL_POSITION = TOAST_HEIGHT + 65;
 const INITIAL_OPACITY = 0;
 const FINAL_OPACITY = 1;
@@ -44,8 +43,9 @@ export type Props = {
   setToastConfig: React.Dispatch<React.SetStateAction<ToastConfig>>;
   toastQueue: ToastConfig[];
   title: string;
-  delay?: number;
   subText?: string;
+  delay?: number;
+  showAccent?: boolean;
   autoDismiss?: boolean;
   containerStyle?: ViewStyle;
   titleStyle?: TextStyle;
@@ -62,7 +62,15 @@ export type Props = {
 
 const debug = false;
 
-export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
+// known issues:
+// panresponder and touchable opacity gestures conflict. need a way to solve this.
+// custom toast colours need doing
+
+export function Toast({
+  delay = consts.DEFAULT_DELAY,
+  showAccent = true,
+  ...props
+}: Props) {
   debug && console.log({ props });
   const timer = useRef<NodeJS.Timer | null>(null);
   const y = useRef(new Animated.Value(INITIAL_POSITION));
@@ -77,13 +85,15 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
           timer.current = setTimeout(() => props.setIsVisible(false), delay);
         }
         const isBelowFinalPosition = gestureState.dy > 0; // use 0 as event gives relative position to where view was
-        const newPosition = FINAL_POSITION + gestureState.dy;
         if (isBelowFinalPosition) {
           // add resistance when moving down
-          y.current.setValue(newPosition ** DRAG_RESISTANCE);
+          // dy must be have drag resistance as exponent. Sum of dy and constant with resistance exponent doesn't work properly
+          y.current.setValue(
+            FINAL_POSITION + gestureState.dy ** DRAG_RESISTANCE
+          );
         } else {
           // is going up
-          y.current.setValue(newPosition);
+          y.current.setValue(FINAL_POSITION + gestureState.dy);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
@@ -105,7 +115,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
               if (timer.current) clearTimeout(timer.current);
               y.current.setValue(INITIAL_POSITION);
               hide(false);
-            }, 75);
+            }, 75); // debounce 75ms
             y.current.removeListener(lId);
           }
         });
@@ -174,7 +184,7 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
           opacity: y.current.interpolate({
             inputRange: [
               INITIAL_POSITION,
-              TOP_OF_SCREEN,
+              TOAST_HEIGHT, // when y moved down by toast height
               props.topOffset ?? FINAL_POSITION,
             ],
             outputRange: [INITIAL_OPACITY, FINAL_OPACITY * 0.3, FINAL_OPACITY],
@@ -185,16 +195,18 @@ export function Toast({ delay = consts.DEFAULT_DELAY, ...props }: Props) {
     >
       <TouchableOpacity
         onLongPress={props.onLongPress}
-        onPress={props.onPress}
+        onPressOut={props.onPress}
         disabled={!props.onPress && !props.onLongPress}
-        style={styles.innerContainer}
+        style={styles.button}
       >
-        <View
-          style={{
-            ...styles.accentColumn,
-            backgroundColor: getToastTypeColor(props.toastType),
-          }}
-        />
+        {showAccent && (
+          <View
+            style={{
+              ...styles.accentColumn,
+              backgroundColor: getToastTypeColor(props.toastType),
+            }}
+          />
+        )}
         <View style={styles.contentWrapper}>
           <View style={styles.contentContainer}>
             <Text style={[styles.title, props.titleStyle]}>{props.title}</Text>
@@ -232,13 +244,14 @@ const styles = StyleSheet.create({
     height: TOAST_HEIGHT,
     alignSelf: 'center',
     top: INITIAL_POSITION,
-  },
-  innerContainer: {
     flexDirection: 'row',
-    height: '100%',
     borderRadius: BORDER_RADIUS,
     borderWidth: 1,
     borderColor: '#BBB',
+  },
+  button: {
+    flex: 1,
+    flexDirection: 'row',
   },
   accentColumn: {
     width: 8,
