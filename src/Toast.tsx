@@ -63,7 +63,6 @@ export type Props = {
 const debug = false;
 
 // known issues:
-// panresponder and touchable opacity gestures conflict. need a way to solve this.
 // custom toast colours need doing
 
 export function Toast({
@@ -77,6 +76,10 @@ export function Toast({
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, { dy }) => {
+        // prohibit gesture if not moving to allow touchable opacity on press to function
+        return dy !== 0;
+      },
       onPanResponderMove: (_, gestureState) => {
         if (timer.current) {
           // refresh timeout if notification interacted with
@@ -195,7 +198,7 @@ export function Toast({
     >
       <TouchableOpacity
         onLongPress={props.onLongPress}
-        onPressOut={props.onPress}
+        onPress={props.onPress}
         disabled={!props.onPress && !props.onLongPress}
         style={styles.button}
       >
