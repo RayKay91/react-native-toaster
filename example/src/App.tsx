@@ -23,6 +23,7 @@ function B() {
           title: 'Hello there!',
           subText: 'lol',
           toastType: 2,
+          onLongPress: () => console.log('learn to let go! :)'),
           onPress: () => console.log('press'),
           onWillShow: () => console.log('willShow'),
           onDidShow: () => console.log('didShow'),

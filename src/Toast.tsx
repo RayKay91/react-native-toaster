@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 
 import { ToastType } from './types';
-import * as consts from './constants';
 import type { ToastConfig } from './ToastContext';
+import { debounce } from './utils';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -36,6 +36,7 @@ const HIDE_ANIM_CONFIG = {
   useNativeDriver: true,
 };
 const DRAG_RESISTANCE = 0.7;
+const DEFAULT_DELAY = 5000;
 
 export type Props = {
   isVisible: boolean;
@@ -58,6 +59,7 @@ export type Props = {
   onDidHide?: () => void;
   onPress?: () => void;
   onLongPress?: () => void;
+  longPressDuration?: number;
 };
 
 const debug = false;
@@ -66,7 +68,7 @@ const debug = false;
 // custom toast colours need doing
 
 export function Toast({
-  delay = consts.DEFAULT_DELAY,
+  delay = DEFAULT_DELAY,
   showAccent = true,
   ...props
 }: Props) {
@@ -80,46 +82,44 @@ export function Toast({
         // prohibit gesture if not moving to allow touchable opacity on press to function
         return dy !== 0;
       },
-      onPanResponderMove: (_, gestureState) => {
+      onPanResponderMove: (_, { dy }) => {
         if (timer.current) {
           // refresh timeout if notification interacted with
           // ensures notification is not hidden while user is interacting with it.
           clearTimeout(timer.current);
           timer.current = setTimeout(() => props.setIsVisible(false), delay);
         }
-        const isBelowFinalPosition = gestureState.dy > 0; // use 0 as event gives relative position to where view was
+        const isBelowFinalPosition = dy > 0; // use 0 as event gives relative position to where view was
         if (isBelowFinalPosition) {
           // add resistance when moving down
           // dy must be have drag resistance as exponent. Sum of dy and constant with resistance exponent doesn't work properly
-          y.current.setValue(
-            FINAL_POSITION + gestureState.dy ** DRAG_RESISTANCE
-          );
+          y.current.setValue(FINAL_POSITION + dy ** DRAG_RESISTANCE);
         } else {
           // is going up
-          y.current.setValue(FINAL_POSITION + gestureState.dy);
+          y.current.setValue(FINAL_POSITION + dy);
         }
       },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 0) {
+      onPanResponderRelease: (_, { dy, vy }) => {
+        if (dy > 0) {
           // going down
           return Animated.spring(y.current, SHOW_ANIM_CONFIG).start();
         }
 
         // going up
         Animated.decay(y.current, {
-          velocity: gestureState.vy * 0.1,
+          velocity: vy * 0.1,
           useNativeDriver: true,
         }).start();
-        let id: NodeJS.Timeout;
-        const lId = y.current.addListener(({ value }) => {
+        // this should only run if the toast is flung up - not auto hidden, hence not in useEffect
+        const listenerId = y.current.addListener(({ value }) => {
           if (value < INITIAL_POSITION) {
-            if (id) clearTimeout(id);
-            id = setTimeout(() => {
+            // sometimes being called more than intended since value is from native thread so async.
+            debounce(() => {
               if (timer.current) clearTimeout(timer.current);
               y.current.setValue(INITIAL_POSITION);
               hide(false);
-            }, 75); // debounce 75ms
-            y.current.removeListener(lId);
+            }, 75)();
+            y.current.removeListener(listenerId);
           }
         });
       },
@@ -142,7 +142,7 @@ export function Toast({
   }, [props]);
 
   const hide = useCallback(
-    (runWithAnimation: boolean) => {
+    (runWithAnimation = true) => {
       props.onWillHide?.();
       props.setIsVisible(false);
       // if toast is flung up, we dont want timing function to run, but other cbs and next toast logic should
@@ -168,7 +168,7 @@ export function Toast({
 
     if (!props.isVisible) {
       timer.current && clearTimeout(timer.current);
-      if (!isFirstMount.current) hide(true);
+      if (!isFirstMount.current) hide();
     }
     isFirstMount.current = false;
 
@@ -187,7 +187,7 @@ export function Toast({
           opacity: y.current.interpolate({
             inputRange: [
               INITIAL_POSITION,
-              TOAST_HEIGHT, // when y moved down by toast height
+              TOAST_HEIGHT,
               props.topOffset ?? FINAL_POSITION,
             ],
             outputRange: [INITIAL_OPACITY, FINAL_OPACITY * 0.3, FINAL_OPACITY],
@@ -197,8 +197,15 @@ export function Toast({
       testID={'toast'}
     >
       <TouchableOpacity
-        onLongPress={props.onLongPress}
-        onPress={props.onPress}
+        delayLongPress={props.longPressDuration}
+        onLongPress={() => {
+          props.onLongPress?.();
+          hide();
+        }}
+        onPress={() => {
+          props.onPress?.();
+          hide();
+        }}
         disabled={!props.onPress && !props.onLongPress}
         style={styles.button}
       >

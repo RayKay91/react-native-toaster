@@ -1,0 +1,107 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Toast /> does not have visual regressions 1`] = `
+<View
+  collapsable={false}
+  onMoveShouldSetResponder={[Function]}
+  onMoveShouldSetResponderCapture={[Function]}
+  onResponderEnd={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderReject={[Function]}
+  onResponderRelease={[Function]}
+  onResponderStart={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  onStartShouldSetResponderCapture={[Function]}
+  style={
+    Object {
+      "alignSelf": "center",
+      "borderColor": "#BBB",
+      "borderRadius": 8,
+      "borderWidth": 1,
+      "flexDirection": "row",
+      "height": 75,
+      "opacity": 0,
+      "position": "absolute",
+      "top": -75,
+      "transform": Array [
+        Object {
+          "translateY": -75,
+        },
+      ],
+      "width": 725,
+    }
+  }
+  testID="toast"
+>
+  <View
+    accessibilityState={
+      Object {
+        "disabled": true,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onClick={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      Object {
+        "flex": 1,
+        "flexDirection": "row",
+        "opacity": 1,
+      }
+    }
+  >
+    <View
+      style={
+        Object {
+          "backgroundColor": "white",
+          "borderBottomLeftRadius": 8,
+          "borderTopLeftRadius": 8,
+          "width": 8,
+        }
+      }
+    />
+    <View
+      style={
+        Object {
+          "backgroundColor": "white",
+          "borderBottomLeftRadius": 0,
+          "borderRadius": 8,
+          "borderTopLeftRadius": 0,
+          "flex": 1,
+          "flexDirection": "row",
+          "paddingLeft": 10,
+        }
+      }
+    >
+      <View
+        style={
+          Object {
+            "justifyContent": "center",
+          }
+        }
+      >
+        <Text
+          style={
+            Array [
+              Object {},
+              undefined,
+            ]
+          }
+        >
+          hello
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
