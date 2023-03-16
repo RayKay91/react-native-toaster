@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 
 import { ToastType } from './types';
-import type { ToastConfig } from './ToastContext';
 import { debounce } from './utils';
 
 const TOAST_HEIGHT = 75;
@@ -41,8 +40,7 @@ const DEFAULT_DELAY = 5000;
 export type Props = {
   isVisible: boolean;
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  setToastConfig: React.Dispatch<React.SetStateAction<ToastConfig>>;
-  toastQueue: ToastConfig[];
+  displayNextToastInQueue: () => void;
   title: string;
   subText?: string;
   delay?: number;
@@ -133,12 +131,7 @@ export function Toast({
 
   const onHide = useCallback(() => {
     props.onDidHide?.();
-    props.toastQueue.shift();
-    const nextToast = props.toastQueue[0];
-    if (nextToast) {
-      props.setToastConfig(nextToast);
-      props.setIsVisible(true);
-    }
+    props.displayNextToastInQueue();
   }, [props]);
 
   const hide = useCallback(

@@ -8,11 +8,10 @@ describe('<Toast />', () => {
   it('renders', async () => {
     const props = {
       title: 'hello',
-      subtext: 'world ',
-      setToastConfig: jest.fn(),
+      subText: 'world',
       setIsVisible: jest.fn(),
       isVisible: false,
-      toastQueue: [],
+      displayNextToastInQueue: jest.fn(),
     };
     render(<Toast {...props} />);
     const toast = await screen.getByTestId(/toast/);
@@ -23,11 +22,10 @@ describe('<Toast />', () => {
   it('does not have visual regressions', () => {
     const props = {
       title: 'hello',
-      subtext: 'world ',
-      setToastConfig: jest.fn(),
+      subText: 'world',
       setIsVisible: jest.fn(),
       isVisible: false,
-      toastQueue: [],
+      displayNextToastInQueue: jest.fn(),
     };
     const tree = renderer.create(<Toast {...props} />).toJSON();
     expect(tree).toMatchSnapshot();
@@ -36,11 +34,10 @@ describe('<Toast />', () => {
   it('is initially off screen', async () => {
     const props = {
       title: 'hello',
-      subtext: 'world ',
-      setToastConfig: jest.fn(),
+      subText: 'world',
       setIsVisible: jest.fn(),
       isVisible: false,
-      toastQueue: [],
+      displayNextToastInQueue: jest.fn(),
     };
     render(<Toast {...props} />);
     const toast = await screen.getByTestId(/toast/);

@@ -5,7 +5,7 @@ export type ToastConfig = {
   id?: string;
 } & Omit<
   ToastProps,
-  'isVisible' | 'setIsVisible' | 'toastQueue' | 'setToastConfig'
+  'isVisible' | 'setIsVisible' | 'displayNextToastInQueue' | 'setToastConfig '
 >;
 
 type ToastContextType = {
@@ -52,16 +52,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     title: '',
   });
 
-  const show = (toastConfigs: ToastConfig) => {
-    queue.current.push(toastConfigs);
-    const nextToast = queue.current[0];
-    if (nextToast) setToastConfig(nextToast);
-    setShowToast(true);
+  const enqueueToast = (_toastConfig: ToastConfig) =>
+    queue.current.push(_toastConfig);
+  const dequeueToast = () => queue.current.shift();
+
+  const show = (_toastConfig: ToastConfig) => {
+    enqueueToast(_toastConfig);
+    displayNextToastInQueue(false);
   };
 
   const hide = () => {
     setShowToast(false);
   };
+
+  const displayNextToastInQueue = (shouldDequeue = true) => {
+    if (shouldDequeue) dequeueToast();
+    const nextToast = queue.current[0];
+    if (nextToast) {
+      setToastConfig(nextToast);
+      setShowToast(true);
+    }
+  };
+
   return (
     <ToastContext.Provider
       value={getToastContext({
@@ -76,8 +88,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {...toastConfig}
         isVisible={showToast}
         setIsVisible={setShowToast}
-        setToastConfig={setToastConfig}
-        toastQueue={queue.current}
+        displayNextToastInQueue={displayNextToastInQueue}
       />
     </ToastContext.Provider>
   );
