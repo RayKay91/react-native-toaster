@@ -37,6 +37,7 @@ exports[`<Toast /> does not have visual regressions 1`] = `
   testID="toast"
 >
   <View
+    accessibilityRole="button"
     accessibilityState={
       Object {
         "disabled": true,
@@ -99,6 +100,16 @@ exports[`<Toast /> does not have visual regressions 1`] = `
           }
         >
           hello
+        </Text>
+        <Text
+          style={
+            Array [
+              Object {},
+              undefined,
+            ]
+          }
+        >
+          world
         </Text>
       </View>
     </View>
