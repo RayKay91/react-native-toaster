@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
-import { Toast, Props as ToastProps } from './Toast';
+import { Toast, Props as ToastProps, toastTypeColors } from './Toast';
 
 export type ToastConfig = {
   id?: string;
 } & Omit<
   ToastProps,
-  'isVisible' | 'setIsVisible' | 'displayNextToastInQueue' | 'setToastConfig '
+  | 'isVisible'
+  | 'setIsVisible'
+  | 'displayNextToastInQueue'
+  | 'setToastConfig'
+  | 'userConfig'
 >;
 
 type ToastContextType = {
@@ -44,8 +48,17 @@ export const useToaster = () => {
   return context;
 };
 
+export type ToastProviderConfig = {
+  toastTypeColors: typeof toastTypeColors;
+};
+
+type ToastProviderProps = {
+  userConfig?: ToastProviderConfig;
+  children: React.ReactNode;
+};
+
 // context provider
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider(props: ToastProviderProps) {
   const queue = useRef<ToastConfig[]>([]);
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastConfig, setToastConfig] = useState<ToastConfig>({
@@ -83,9 +96,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         hide,
       })}
     >
-      {children}
+      {props.children}
       <Toast
         {...toastConfig}
+        userConfig={props.userConfig}
         isVisible={showToast}
         setIsVisible={setShowToast}
         displayNextToastInQueue={displayNextToastInQueue}

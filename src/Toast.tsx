@@ -11,9 +11,9 @@ import {
   Easing,
   PanResponder,
 } from 'react-native';
-
+import type { ToastProviderConfig } from './ToastContext';
 import { ToastType } from './types';
-import { debounce } from './utils';
+import { debounce, isJestRunningCode } from './utils';
 
 const TOAST_HEIGHT = 75;
 const H_PADDING = 25;
@@ -26,13 +26,13 @@ const SHOW_ANIM_CONFIG = {
   toValue: FINAL_POSITION,
   damping: 13,
   stiffness: 110,
-  useNativeDriver: true,
+  useNativeDriver: !isJestRunningCode(),
 };
 const HIDE_ANIM_CONFIG = {
   toValue: INITIAL_POSITION,
   easing: Easing.back(1.3),
   duration: 500,
-  useNativeDriver: true,
+  useNativeDriver: !isJestRunningCode(),
 };
 const DRAG_RESISTANCE = 0.7;
 const DEFAULT_DELAY = 5000;
@@ -41,6 +41,7 @@ export type Props = {
   isVisible: boolean;
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
   displayNextToastInQueue: () => void;
+  userConfig?: ToastProviderConfig;
   title: string;
   subText?: string;
   delay?: number;
@@ -62,12 +63,10 @@ export type Props = {
 
 const debug = false;
 
-// known issues:
-// custom toast colours need doing
-
 export function Toast({
   delay = DEFAULT_DELAY,
   showAccent = true,
+  toastType = ToastType.DEFAULT,
   ...props
 }: Props) {
   debug && console.log({ props });
@@ -190,6 +189,7 @@ export function Toast({
       testID={'toast'}
     >
       <TouchableOpacity
+        accessibilityRole="button"
         delayLongPress={props.longPressDuration}
         onLongPress={() => {
           props.onLongPress?.();
@@ -206,7 +206,10 @@ export function Toast({
           <View
             style={{
               ...styles.accentColumn,
-              backgroundColor: getToastTypeColor(props.toastType),
+              backgroundColor: getToastTypeColor(
+                toastType,
+                props.userConfig?.toastTypeColors
+              ),
             }}
           />
         )}
@@ -225,16 +228,26 @@ export function Toast({
   );
 }
 
-const getToastTypeColor = (toastType: ToastType | undefined) => {
+export const toastTypeColors = {
+  DEFAULT: 'white',
+  SUCCESS: 'green',
+  FAIL: 'red',
+  INFO: 'blue',
+};
+
+const getToastTypeColor = (
+  toastType: ToastType,
+  colors: typeof toastTypeColors = toastTypeColors
+) => {
   switch (toastType) {
     case ToastType.SUCCESS:
-      return 'green';
+      return colors.SUCCESS;
     case ToastType.FAIL:
-      return 'red';
+      return colors.FAIL;
     case ToastType.INFO:
-      return 'blue';
+      return colors.INFO;
     default:
-      return 'white';
+      return colors.DEFAULT;
   }
 };
 

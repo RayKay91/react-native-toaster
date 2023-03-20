@@ -3,9 +3,17 @@ import * as React from 'react';
 import { View, Button } from 'react-native';
 import { useToaster } from 'react-native-toaster';
 import { ToastProvider } from 'react-native-toaster';
+
+const toastTypeColors = {
+  SUCCESS: 'pink',
+  FAIL: 'pink',
+  INFO: 'pink',
+  DEFAULT: 'pink',
+};
+
 export default () => {
   return (
-    <ToastProvider>
+    <ToastProvider userConfig={{ toastTypeColors }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <B />
       </View>
