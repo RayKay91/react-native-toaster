@@ -135,7 +135,6 @@ export function Toast({
 
   const hide = useCallback(
     (runWithAnimation = true) => {
-      props.onWillHide?.();
       props.setIsVisible(false);
       // if toast is flung up, we dont want timing function to run, but other cbs and next toast logic should
       runWithAnimation
@@ -160,7 +159,10 @@ export function Toast({
 
     if (!props.isVisible) {
       timer.current && clearTimeout(timer.current);
-      if (!isFirstMount.current) hide();
+      if (!isFirstMount.current) {
+        props.onWillHide?.(); // called here so fling gesture doesn't cause it to be called twice
+        hide();
+      }
     }
     isFirstMount.current = false;
 
@@ -193,11 +195,11 @@ export function Toast({
         delayLongPress={props.longPressDuration}
         onLongPress={() => {
           props.onLongPress?.();
-          hide();
+          props.setIsVisible(false);
         }}
         onPress={() => {
           props.onPress?.();
-          hide();
+          props.setIsVisible(false);
         }}
         disabled={!props.onPress && !props.onLongPress}
         style={styles.button}

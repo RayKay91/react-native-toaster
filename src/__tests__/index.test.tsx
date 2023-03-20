@@ -71,6 +71,7 @@ describe('<Toast />', () => {
       isVisible: false,
       displayNextToastInQueue: jest.fn(),
       onPress: jest.fn(),
+      onWillHide: jest.fn(),
     };
     render(<Toast {...mockProps} />);
     const toast = screen.getByRole('button');
@@ -78,20 +79,8 @@ describe('<Toast />', () => {
     expect(mockProps.onPress).toBeCalledTimes(1);
     expect(mockProps.setIsVisible).toBeCalledTimes(1);
     expect(mockProps.setIsVisible).toBeCalledWith(false);
+    expect(mockProps.onWillHide.mock.calls.length).not.toBeGreaterThan(1);
   });
-  // it('should render the title and subtext', () => {
-  //   const mockProps = {
-  //     title: 'hello',
-  //     subText: 'world',
-  //     setIsVisible: jest.fn(),
-  //     isVisible: false,
-  //     displayNextToastInQueue: jest.fn(),
-  //   };
-  //   const { getByText } = render(<Toast {...mockProps} />);
-
-  //   expect(getByText('hello')).toBeDefined();
-  //   expect(getByText('world')).toBeDefined();
-  // });
 
   // this test causes weird open handles issue due to animation timer not being properly run
   // using jest --forceExit to workaround for now.
