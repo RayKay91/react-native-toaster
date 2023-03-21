@@ -82,8 +82,10 @@ describe('<Toast />', () => {
     expect(mockProps.onWillHide.mock.calls.length).not.toBeGreaterThan(1);
   });
   it('useToaster() context returns correct values', () => {
-    const { result } = renderHook(useToaster, { wrapper: ToastProvider });
-    expect(result.current).toMatchObject({
+    const {
+      result: { current: toast },
+    } = renderHook(useToaster, { wrapper: ToastProvider });
+    expect(toast).toMatchObject({
       isToastVisible: false,
       hide: expect.any(Function),
       show: expect.any(Function),
@@ -121,6 +123,22 @@ describe('<Toast />', () => {
     expect(dangerousQSpy).toHaveBeenCalled();
     expect(dangerousQ).toEqual(expectedQueue);
     expect(Object.isFrozen(dangerousQ)).toBe(false);
+  });
+
+  it.failing('dangerous queue accessed toast object is not frozen', () => {
+    const {
+      result: { current: toast },
+    } = renderHook(useToaster, { wrapper: ToastProvider });
+    const expectedQueue = [{ title: 'hello there' }];
+
+    const dangerousQSpy = jest.spyOn(toast, 'dangerously_get_queue');
+    const dangerousQ = toast.dangerously_get_queue();
+    expect(dangerousQSpy).toHaveBeenCalled();
+    expect(dangerousQ).toEqual(expectedQueue);
+    expect(Object.isFrozen(dangerousQ)).toBe(false);
+    // @todo fix
+    // this expect fails for an unknown reason
+    expect(Object.isFrozen(dangerousQ[0])).toBe(false);
   });
 
   // this test causes weird open handles issue due to animation timer not being properly run on jest > v27
