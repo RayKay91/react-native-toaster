@@ -1,11 +1,12 @@
 import React from 'react';
-import renderer from 'react-test-renderer';
-import { Toast } from '..';
+import renderer, { act } from 'react-test-renderer';
+import { Toast, ToastProvider, useToaster } from '..';
 import {
   render,
   screen,
   fireEvent,
   waitFor,
+  renderHook,
 } from '@testing-library/react-native';
 import '@testing-library/jest-native/extend-expect';
 
@@ -81,8 +82,44 @@ describe('<Toast />', () => {
     expect(mockProps.setIsVisible).toBeCalledWith(false);
     expect(mockProps.onWillHide.mock.calls.length).not.toBeGreaterThan(1);
   });
+  it('useToaster() context returns correct values', () => {
+    const { result } = renderHook(useToaster, { wrapper: ToastProvider });
+    expect(result.current).toMatchObject({
+      isToastVisible: false,
+      hide: expect.any(Function),
+      show: expect.any(Function),
+      getQueue: expect.any(Function),
+      dangerously_get_queue: expect.any(Function),
+    });
+  });
 
-  // this test causes weird open handles issue due to animation timer not being properly run
+  it('useToaster() context methods work correctly', () => {
+    const {
+      result: { current: toast },
+    } = renderHook(useToaster, { wrapper: ToastProvider });
+
+    const spyShow = jest.spyOn(toast, 'show');
+    act(() => {
+      toast.show({ title: 'hello there' });
+    });
+    expect(spyShow).toBeCalledWith({ title: 'hello there' });
+    const spyGetQ = jest.spyOn(toast, 'getQueue');
+    const queue = toast.getQueue();
+    expect(spyGetQ).toBeCalled();
+    expect(queue).toEqual([{ title: 'hello there' }]);
+
+    const spyHide = jest.spyOn(toast, 'hide');
+    act(() => {
+      toast.hide();
+    });
+    expect(spyHide).toHaveBeenCalled();
+    const dangerousQSpy = jest.spyOn(toast, 'dangerously_get_queue');
+    const dangerousQueue = toast.dangerously_get_queue();
+    expect(dangerousQSpy).toHaveBeenCalled();
+    expect(dangerousQueue).toEqual([{ title: 'hello there' }]);
+  });
+
+  // this test causes weird open handles issue due to animation timer not being properly run on jest > v27
   // using jest --forceExit to workaround for now.
   it('is on screen if is visible', async () => {
     const props = {
