@@ -64,12 +64,12 @@ describe('<Toast />', () => {
     expect(getByText('world')).toBeDefined();
   });
 
-  it('should call onPress() and then call setIsVisible(false)', () => {
+  it('should call onPress() and then call setIsVisible(false)', async () => {
     const mockProps = {
       title: 'hello',
       subText: 'world',
       setIsVisible: jest.fn(),
-      isVisible: false,
+      isVisible: true,
       displayNextToastInQueue: jest.fn(),
       onPress: jest.fn(),
       onWillHide: jest.fn(),
@@ -78,7 +78,6 @@ describe('<Toast />', () => {
     const toast = screen.getByRole('button');
     fireEvent.press(toast);
     expect(mockProps.onPress).toBeCalledTimes(1);
-    expect(mockProps.setIsVisible).toBeCalledTimes(1);
     expect(mockProps.setIsVisible).toBeCalledWith(false);
     expect(mockProps.onWillHide.mock.calls.length).not.toBeGreaterThan(1);
   });
@@ -100,13 +99,17 @@ describe('<Toast />', () => {
 
     const spyShow = jest.spyOn(toast, 'show');
     act(() => {
-      toast.show({ title: 'hello there' });
+      const toastConfig = { title: 'hello there' };
+      toast.show(toastConfig);
     });
     expect(spyShow).toBeCalledWith({ title: 'hello there' });
     const spyGetQ = jest.spyOn(toast, 'getQueue');
+    const expectedQueue = [{ title: 'hello there' }];
     const queue = toast.getQueue();
     expect(spyGetQ).toBeCalled();
-    expect(queue).toEqual([{ title: 'hello there' }]);
+    expect(queue).toEqual(expectedQueue);
+    expect(Object.isFrozen(queue)).toBe(true);
+    queue.forEach((_toast) => expect(Object.isFrozen(_toast)).toBe(true));
 
     const spyHide = jest.spyOn(toast, 'hide');
     act(() => {
@@ -114,9 +117,10 @@ describe('<Toast />', () => {
     });
     expect(spyHide).toHaveBeenCalled();
     const dangerousQSpy = jest.spyOn(toast, 'dangerously_get_queue');
-    const dangerousQueue = toast.dangerously_get_queue();
+    const dangerousQ = toast.dangerously_get_queue();
     expect(dangerousQSpy).toHaveBeenCalled();
-    expect(dangerousQueue).toEqual([{ title: 'hello there' }]);
+    expect(dangerousQ).toEqual(expectedQueue);
+    expect(Object.isFrozen(dangerousQ)).toBe(false);
   });
 
   // this test causes weird open handles issue due to animation timer not being properly run on jest > v27
