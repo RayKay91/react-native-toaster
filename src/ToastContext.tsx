@@ -15,23 +15,14 @@ export type ToastConfig = {
 type ToastContextType = {
   isToastVisible: boolean;
   show: (toastConfig: ToastConfig) => void;
-  queue: ToastConfig[];
   hide: () => void;
 };
 
-function getToastContext({
-  isToastVisible,
-  show,
-  queue,
-  hide,
-}: ToastContextType) {
+function getToastContext({ isToastVisible, show, hide }: ToastContextType) {
   return {
     isToastVisible,
     hide,
     show,
-    getQueue: () => Object.freeze([...queue.map(Object.freeze)]),
-    // dangerous as user can mutate queue.
-    dangerously_get_queue: () => queue,
   };
 }
 
@@ -90,7 +81,6 @@ export function ToastProvider(props: ToastProviderProps) {
   return (
     <ToastContext.Provider
       value={getToastContext({
-        queue: queue.current,
         isToastVisible: showToast,
         show,
         hide,

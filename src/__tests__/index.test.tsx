@@ -105,40 +105,11 @@ describe('<Toast />', () => {
       toast.show(toastConfig);
     });
     expect(spyShow).toBeCalledWith({ title: 'hello there' });
-    const spyGetQ = jest.spyOn(toast, 'getQueue');
-    const expectedQueue = [{ title: 'hello there' }];
-    const queue = toast.getQueue();
-    expect(spyGetQ).toBeCalled();
-    expect(queue).toEqual(expectedQueue);
-    expect(Object.isFrozen(queue)).toBe(true);
-    queue.forEach((_toast) => expect(Object.isFrozen(_toast)).toBe(true));
-
     const spyHide = jest.spyOn(toast, 'hide');
     act(() => {
       toast.hide();
     });
     expect(spyHide).toHaveBeenCalled();
-    const dangerousQSpy = jest.spyOn(toast, 'dangerously_get_queue');
-    const dangerousQ = toast.dangerously_get_queue();
-    expect(dangerousQSpy).toHaveBeenCalled();
-    expect(dangerousQ).toEqual(expectedQueue);
-    expect(Object.isFrozen(dangerousQ)).toBe(false);
-  });
-
-  it.failing('dangerous queue accessed toast object is not frozen', () => {
-    const {
-      result: { current: toast },
-    } = renderHook(useToaster, { wrapper: ToastProvider });
-    const expectedQueue = [{ title: 'hello there' }];
-
-    const dangerousQSpy = jest.spyOn(toast, 'dangerously_get_queue');
-    const dangerousQ = toast.dangerously_get_queue();
-    expect(dangerousQSpy).toHaveBeenCalled();
-    expect(dangerousQ).toEqual(expectedQueue);
-    expect(Object.isFrozen(dangerousQ)).toBe(false);
-    // @todo fix
-    // this expect fails for an unknown reason
-    expect(Object.isFrozen(dangerousQ[0])).toBe(false);
   });
 
   // this test causes weird open handles issue due to animation timer not being properly run on jest > v27

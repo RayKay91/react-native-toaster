@@ -8,7 +8,7 @@ const toastTypeColors = {
   SUCCESS: 'pink',
   FAIL: 'pink',
   INFO: 'pink',
-  DEFAULT: 'pink',
+  DEFAULT: 'salmon',
 };
 
 export default () => {
@@ -30,7 +30,6 @@ function B() {
         t.show({
           title: 'Hello there!',
           subText: 'lol',
-          toastType: 2,
           onLongPress: () => console.log('learn to let go! :)'),
           onPress: () => console.log('press'),
           onWillShow: () => console.log('willShow'),
