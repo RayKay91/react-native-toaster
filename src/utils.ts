@@ -7,5 +7,7 @@ export function debounce(cb: () => void, timeout: number) {
 }
 
 export function isJestRunningCode() {
-  return process.env.JEST_WORKER_ID !== undefined;
+  return (
+    process.env.JEST_WORKER_ID !== undefined || process.env.NODE_ENV === 'test'
+  );
 }

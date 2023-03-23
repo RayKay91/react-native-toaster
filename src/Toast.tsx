@@ -105,7 +105,7 @@ export function Toast({
         // going up
         Animated.decay(y.current, {
           velocity: vy * 0.1,
-          useNativeDriver: true,
+          useNativeDriver: !isJestRunningCode(),
         }).start();
         // this should only run if the toast is flung up - not auto hidden, hence not in useEffect
         const listenerId = y.current.addListener(({ value }) => {
@@ -237,7 +237,7 @@ export const toastTypeColors = {
   INFO: 'blue',
 };
 
-const getToastTypeColor = (
+export const getToastTypeColor = (
   toastType: ToastType,
   colors: typeof toastTypeColors = toastTypeColors
 ) => {

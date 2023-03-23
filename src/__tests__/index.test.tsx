@@ -9,6 +9,8 @@ import {
   renderHook,
 } from '@testing-library/react-native';
 import '@testing-library/jest-native/extend-expect';
+import { getToastTypeColor, toastTypeColors } from '../Toast';
+import { ToastType } from '../types';
 
 describe('<Toast />', () => {
   it('renders', async () => {
@@ -89,8 +91,6 @@ describe('<Toast />', () => {
       isToastVisible: false,
       hide: expect.any(Function),
       show: expect.any(Function),
-      getQueue: expect.any(Function),
-      dangerously_get_queue: expect.any(Function),
     });
   });
 
@@ -101,8 +101,7 @@ describe('<Toast />', () => {
 
     const spyShow = jest.spyOn(toast, 'show');
     act(() => {
-      const toastConfig = { title: 'hello there' };
-      toast.show(toastConfig);
+      toast.show({ title: 'hello there' });
     });
     expect(spyShow).toBeCalledWith({ title: 'hello there' });
     const spyHide = jest.spyOn(toast, 'hide');
@@ -125,5 +124,38 @@ describe('<Toast />', () => {
     render(<Toast {...props} />);
     const toast = await screen.getByTestId(/toast/);
     await waitFor(() => expect(toast).toBeVisible());
+  });
+});
+
+describe('toast type colours work correctly', () => {
+  it('returns the correct color for SUCCESS toast type', () => {
+    const color = getToastTypeColor(ToastType.SUCCESS);
+    expect(color).toBe(toastTypeColors.SUCCESS);
+  });
+
+  it('returns the correct color for FAIL toast type', () => {
+    const color = getToastTypeColor(ToastType.FAIL);
+    expect(color).toBe(toastTypeColors.FAIL);
+  });
+
+  it('returns the correct color for INFO toast type', () => {
+    const color = getToastTypeColor(ToastType.INFO);
+    expect(color).toBe(toastTypeColors.INFO);
+  });
+
+  it('returns the correct color for DEFAULT toast type', () => {
+    const color = getToastTypeColor(ToastType.DEFAULT);
+    expect(color).toBe(toastTypeColors.DEFAULT);
+  });
+
+  it('uses custom colors when provided', () => {
+    const customColors = {
+      DEFAULT: 'grey',
+      SUCCESS: 'lightgreen',
+      FAIL: 'darkred',
+      INFO: 'lightblue',
+    };
+    const color = getToastTypeColor(ToastType.SUCCESS, customColors);
+    expect(color).toBe(customColors.SUCCESS);
   });
 });
